@@ -1,0 +1,6 @@
+github.com/golang-migrate/migrate v3.5.4+incompatible h1:R7OzwvCJTCgwapPCiX6DyBiu2czIUMDCB118gFTKTUA=
+github.com/golang-migrate/migrate v3.5.4+incompatible/go.mod h1:IsVUlFN5puWOmXrqjgGUfIRIbU7mr8oNBE2tyERd9Wk=
+github.com/joho/godotenv v1.4.0 h1:3l4+N6zfMWnkbPEXKng2o2/MR5mSwTrBih4ZEkkz1lg=
+github.com/joho/godotenv v1.4.0/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
+github.com/version-1/goooma v0.0.0-20220124043724-b5fbc1fb2a04 h1:t5IX3gtPR4veRTS4p/rEHOkXh22rGQjTQKa9o2E2J98=
+github.com/version-1/goooma v0.0.0-20220124043724-b5fbc1fb2a04/go.mod h1:q8xsZYLMH1ks/O2cDHPt4J8osZPViUkm/xIwgUpe3oc=

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -27,8 +28,13 @@ func main() {
 
 	fmt.Println(command)
 
+	done := preexec(command, args...)
+	if done {
+		return
+	}
+
 	m, err := migrate.New(
-		filePath(),
+		"file://"+filePath(),
 		connstr(),
 	)
 	defer m.Close()
@@ -39,6 +45,15 @@ func main() {
 	m.Log = Logger{}
 
 	exec(m, command, args...)
+}
+
+func preexec(command string, args ...string) bool {
+	switch command {
+	case "gen":
+		gen(filePath(), args[1])
+		return true
+	}
+	return false
 }
 
 func exec(m *migrate.Migrate, command string, args ...string) {
@@ -58,10 +73,11 @@ func exec(m *migrate.Migrate, command string, args ...string) {
 		steps(m, c)
 	case "drop":
 		drop(m)
+	case "gen":
+		gen(filePath(), args[1])
 	default:
 		useage()
 	}
-
 }
 
 func filePath() string {
@@ -101,7 +117,7 @@ func mustLoadEnv() {
 }
 
 func useage() {
-	fmt.Println("migrate [up|down|steps|drop]")
+	fmt.Println("migrate [up|down|steps|drop|gen]")
 }
 
 func up(m *migrate.Migrate) {
@@ -126,6 +142,28 @@ func drop(m *migrate.Migrate) {
 	if err := m.Drop(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func gen(path string, filename string) {
+	timestr := time.Now().Format("20060102150405")
+	up := fmt.Sprintf("%s/%s_%s.up.sql", path, timestr, filename)
+	down := fmt.Sprintf("%s/%s_%s.down.sql", path, timestr, filename)
+
+	f1, err := os.Create(up)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f2, err := os.Create(down)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f1.Close()
+	defer f2.Close()
+
+	fmt.Println("Generate Succsess!!")
+	fmt.Println(up)
+	fmt.Println(down)
 }
 
 type Logger struct{}

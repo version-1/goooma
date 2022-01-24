@@ -1,10 +1,13 @@
 version: "3.9"
 services:
-  dm:
+  db:
     image: postgres:14.1
     ports:
       - "54321:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_PASSWORD=password
 volumes:
   db-data:

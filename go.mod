@@ -1,6 +1,6 @@
 module github.com/version-1/goooma
 
-go 1.16
+go 1.22
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.15.1

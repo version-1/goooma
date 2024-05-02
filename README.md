@@ -15,6 +15,6 @@ goooma
 ## Development
 
 ```
-go install ./cmd/goooma
+go install ./cmd/goooma/goooma
 goooma
 ```

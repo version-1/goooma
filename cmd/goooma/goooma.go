@@ -15,6 +15,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const version = "v0.0.3"
+
 func main() {
 	flag.Parse()
 	args := flag.Args()
@@ -23,6 +25,11 @@ func main() {
 		return
 	}
 	command := args[0]
+
+	if command == "version" {
+		fmt.Println(version)
+		return
+	}
 
 	mustLoadEnv()
 
@@ -107,7 +114,7 @@ func mustLoadEnv() {
 		err = godotenv.Load()
 		envfile = ".env"
 	} else {
-		envfile = ".env" + env
+		envfile = ".env." + env
 		err = godotenv.Load(envfile)
 	}
 

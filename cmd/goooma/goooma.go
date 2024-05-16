@@ -107,7 +107,7 @@ func mustLoadEnv() {
 		err = godotenv.Load()
 		envfile = ".env"
 	} else {
-		envfile = ".env" + env
+		envfile = ".env." + env
 		err = godotenv.Load(envfile)
 	}
 

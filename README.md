@@ -5,16 +5,18 @@ migration tool
 
 ## Install
 
-```
-go get -u github.com/version-1/goooma/cmd/goooma
-
-goooma
-```
-
-
-## Development
+### CLI
 
 ```
-go install ./cmd/goooma/goooma
-goooma
+curl https://raw.githubusercontent.com/version-1/goooma/main/install.sh | sh
+
+goooma version
 ```
+
+### Package
+
+```
+go get -u github.com/version-1/goooma
+```
+
+

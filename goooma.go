@@ -2,36 +2,19 @@ package goooma
 
 import (
 	"context"
-	"flag"
-	"fmt"
 
-	migrate "github.com/golang-migrate/migrate/v4"
-	"github.com/version-1/goooma/core/command"
-	"github.com/version-1/goooma/core/config"
-	"github.com/version-1/goooma/core/logger"
+	"github.com/version-1/goooma/config"
+	"github.com/version-1/goooma/internal/command"
 )
 
 type Config interface {
 	Connstr() string
 	FilePath() string
+	Logger() config.Logger
 }
 
 type Goooma struct {
-	logger Logger
 	config Config
-	args   []string
-}
-
-type Logger interface {
-	Verbose() bool
-	Printf(format string, v ...any)
-
-	Errorf(format string, v ...any)
-	Warnf(format string, v ...any)
-
-	Fatal(v ...any)
-	Info(v ...any)
-	Infof(format string, v ...any)
 }
 
 func New() (*Goooma, error) {
@@ -44,33 +27,30 @@ func New() (*Goooma, error) {
 }
 
 func NewWith(config Config) (*Goooma, error) {
-	flag.Parse()
-	args := flag.Args()
-	if len(args) <= 0 {
-		return nil, command.Useage()
-	}
-
 	return &Goooma{
-		args:   args,
-		logger: logger.DefaultLogger{},
 		config: config,
 	}, nil
 }
 
-const version = "v0.1.0"
+const version = "v0.2.0"
 
-func (g Goooma) Run(ctx context.Context) {
-	cmd := g.args[0]
+func (g Goooma) Run(ctx context.Context, args ...string) {
+	if len(args) <= 0 {
+		g.Logger().Fatal(command.Useage())
+		return
+	}
+
+	cmd := args[0]
 	if cmd == "version" {
-		g.logger.Info(version)
+		g.Logger().Info(version)
 		return
 	}
 
 	operation := command.New(g, cmd)
 
-	done, err := operation.ExecWithoutDB(ctx, g.args...)
+	done, err := operation.ExecWithoutDB(ctx, args...)
 	if err != nil {
-		g.logger.Fatal(err)
+		g.Logger().Fatal(err)
 		return
 	}
 
@@ -78,17 +58,26 @@ func (g Goooma) Run(ctx context.Context) {
 		return
 	}
 
-	m, err := g.prepareMigration()
-	defer m.Close()
+	err = operation.Exec(ctx, args...)
 	if err != nil {
-		g.logger.Fatal(err)
+		g.Logger().Fatal(err)
 	}
+}
 
-	operation.SetMigration(m)
-	err = operation.Exec(ctx, g.args...)
-	if err != nil {
-		g.logger.Fatal(err)
-	}
+func (g Goooma) Up(ctx context.Context) {
+	g.Run(ctx, "up")
+}
+
+func (g Goooma) Down(ctx context.Context) {
+	g.Run(ctx, "down")
+}
+
+func (g Goooma) Drop(ctx context.Context) {
+	g.Run(ctx, "drop")
+}
+
+func (g Goooma) Reset(ctx context.Context) {
+	g.Run(ctx, "reset")
 }
 
 func (g Goooma) FilePath() string {
@@ -96,20 +85,9 @@ func (g Goooma) FilePath() string {
 }
 
 func (g Goooma) Logger() command.Logger {
-	return g.logger
+	return g.config.Logger()
 }
 
-func (g Goooma) prepareMigration() (*migrate.Migrate, error) {
-	g.logger.Info("Preparing migration")
-	g.logger.Infof("file location: %s", g.config.FilePath())
-	m, err := migrate.New(
-		fmt.Sprintf("file://%s", g.config.FilePath()),
-		g.config.Connstr(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	m.Log = g.logger
-
-	return m, nil
+func (g Goooma) Connstr() string {
+	return g.config.Connstr()
 }

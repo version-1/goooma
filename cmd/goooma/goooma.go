@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -16,5 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	g.Run(context.Background())
+	flag.Parse()
+	args := flag.Args()
+	g.Run(context.Background(), args...)
 }

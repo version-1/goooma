@@ -6,30 +6,29 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	migrate "github.com/golang-migrate/migrate/v4"
 )
 
 type Logger interface {
 	Fatal(v ...any)
 	Infof(format string, v ...any)
 	Info(v ...any)
-}
 
-type Migrate interface {
-	Up() error
-	Down() error
-	Steps(count int) error
-	Drop() error
+	Verbose() bool
+	Printf(format string, v ...any)
 }
 
 type App interface {
 	Logger() Logger
 	FilePath() string
+	Connstr() string
 }
 
 type Command struct {
 	cmd string
 	app App
-	m   Migrate
+	m   *migrate.Migrate
 }
 
 func New(app App, cmd string) *Command {
@@ -37,10 +36,6 @@ func New(app App, cmd string) *Command {
 		app: app,
 		cmd: cmd,
 	}
-}
-
-func (c *Command) SetMigration(m Migrate) {
-	c.m = m
 }
 
 func (c Command) logger() Logger {
@@ -60,10 +55,29 @@ func (c Command) ExecWithoutDB(ctx context.Context, args ...string) (bool, error
 	return false, nil
 }
 
+func (c *Command) refreshConnection() error {
+	if c.m != nil {
+		c.m.Close()
+		c.m = nil
+	}
+
+	if err := c.prepareMigration(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c Command) Exec(ctx context.Context, args ...string) error {
 	if c.m == nil {
-		return fmt.Errorf("migration is required to exec the command.")
+		var err error
+		c.app.Logger().Info("Preparing migration")
+		c.app.Logger().Infof("file location: %s", c.app.FilePath())
+		if err = c.prepareMigration(); err != nil {
+			return err
+		}
 	}
+	defer c.m.Close()
 
 	c.logger().Infof("command: %s", c.cmd)
 
@@ -81,6 +95,14 @@ func (c Command) Exec(ctx context.Context, args ...string) error {
 		return c.m.Steps(count)
 	case "drop":
 		return c.m.Drop()
+	case "reset":
+		err := c.m.Drop()
+		if err != nil {
+			return err
+		}
+		c.refreshConnection()
+
+		return c.m.Up()
 	case "gen":
 		return c.gen(args[1])
 	default:
@@ -89,7 +111,7 @@ func (c Command) Exec(ctx context.Context, args ...string) error {
 }
 
 func Useage() error {
-	return fmt.Errorf("migrate [up|down|steps|drop|gen]")
+	return fmt.Errorf("migrate [up|down|steps|drop|reset|gen]")
 }
 
 func (c Command) gen(filename string) error {
@@ -114,6 +136,20 @@ func (c Command) gen(filename string) error {
 	c.logger().Info("Generate Succsess!!")
 	c.logger().Info(up)
 	c.logger().Info(down)
+
+	return nil
+}
+
+func (c *Command) prepareMigration() error {
+	m, err := migrate.New(
+		fmt.Sprintf("file://%s", c.app.FilePath()),
+		c.app.Connstr(),
+	)
+	if err != nil {
+		return err
+	}
+	m.Log = c.app.Logger()
+	c.m = m
 
 	return nil
 }

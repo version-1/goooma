@@ -48,7 +48,6 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 	g.Run(context.Background(), args...)
- }
 }
 ```
 
